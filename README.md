@@ -1,6 +1,6 @@
 # 🐇 RabbitMQ - Patrones de Mensajería
 
-Proyecto de Sistemas Distribuidos y Programación Paralela - TP3
+Proyecto de Sistemas Distribuidos y Programacion Paralela - TP3
 
 ## 📋 Ejercicio 1: Message Queue (Point-to-Point)
 
@@ -144,6 +144,58 @@ Implementar una cola principal con **Dead Letter Exchange** para redirigir autom
 
 ---
 
+## 🔁 Ejercicio 4: Retry Exponential Backoff (REB)
+
+### 🎯 Objetivo
+Implementar un sistema de reintentos con **espera exponencial** utilizando colas intermedias con TTL.
+
+### 🏗️ Arquitectura
+
+```
+┌──────────┐      ┌─────────────┐      ┌───────────────┐
+│ Producer │─────▶│ Main Queue  │◀─────┤ Retry Queues  │
+└──────────┘      └──────┬──────┘      │ (1s, 2s, 4s, 8s)│
+                         │             └───────▲───────┘
+                 Error? (50% prob)             │
+                         │                     │
+             ┌───────────┴───────────┐         │
+             │     REB Consumer      │─────────┘
+             └───────────┬───────────┘
+                         │
+               Max retries reached?
+                         │
+                         ▼
+             ┌───────────────────────┐
+             │         DLQ           │
+             └───────────────────────┘
+```
+
+### ⚙️ Configuración
+- **Main Queue**: Recibe mensajes originales y reintentos expirados.
+- **Retry Queues**: 4 colas con TTL progresivo (1s, 2s, 4s, 8s).
+- **TTL & DLX**: Cada cola de retry redirige al `MAIN_EXCHANGE` al expirar.
+- **Header `x-retry-count`**: Controla el número de intentos realizados.
+
+### 🔄 Comportamiento Exponential Backoff
+- **Intento 1**: Si falla, espera **1s**.
+- **Intento 2**: Si falla, espera **2s**.
+- **Intento 3**: Si falla, espera **4s**.
+- **Intento 4**: Si falla, espera **8s**.
+- **Fallo Final**: Tras el 4to reintento (5to intento total), el mensaje se mueve a la **DLQ**.
+
+### 🧪 Resultados Observados (Logs)
+```text
+[CONS] Recibido (Intento #1): Tarea #1
+  [!] ERROR en Tarea #1
+  [RETRY] Reencolando con espera de 1s...
+[CONS] Recibido (Intento #2): Tarea #1
+  [RETRY] Reencolando con espera de 2s...
+[CONS] Recibido (Intento #3): Tarea #1
+  [OK] Procesado exitosamente: Tarea #1
+```
+
+---
+
 ## 🚀 Cómo Ejecutar
 
 ### Prerrequisitos
@@ -189,86 +241,51 @@ cd producer && mvn -Dspring-boot.run.main-class=com.grupoamarillo.producer.hit1.
 cd ej3-dlq && mvn clean spring-boot:run
 ```
 
-Salida esperada (resumen):
-- `MAIN CONSUMER -> procesado OK` para mensajes con `"error": false`
-- `MAIN CONSUMER -> mensaje con error, se rechaza y va a DLQ` para `"error": true`
-- `DLQ CONSUMER -> mensaje fallido recibido` en la cola de dead letters
+### Ejercicio 4: Exponential Backoff (REB)
+```bash
+# Terminal 1 - Ejecutar Ej4 (proyecto aislado)
+cd ej4-REB && mvn clean spring-boot:run
+```
 
 ---
 
 ## 📊 Comparativa de Patrones
 
-| Característica | Point-to-Point | Pub-Sub Fan-out | DLQ |
-|----------------|----------------|-----------------|-----|
-| **Destinatarios** | 1 consumer por mensaje | Todos los subscribers | Mensajes fallidos |
-| **Queue** | Compartida, durable | Anónimas, temporales | Principal + DLQ durable |
-| **Acoplamiento** | Producer conoce queue | Publisher no conoce subscribers | Productor/consumidor desacoplados por DLX |
-| **Escalabilidad** | Horizontal (más consumers) | Horizontal (más subscribers) | Horizontal en reproceso de fallidos |
-| **Caso de uso** | Procesamiento de tareas | Notificaciones/Eventos | Trazabilidad y recuperación de errores |
+| Característica | Point-to-Point | Pub-Sub Fan-out | DLQ | Retry Backoff |
+|----------------|----------------|-----------------|-----|---------------|
+| **Destinatarios** | 1 consumer | Todos los subscribers | Mensajes fallidos | 1 consumer (con reintentos) |
+| **Queue** | Compartida, durable | Anónimas, temporales | Principal + DLQ | Principal + Retry Queues |
+| **Escalabilidad** | Horizontal | Horizontal | Control de fallos | Resiliencia temporal |
+| **Estrategia** | Round-Robin | Broadcast | Redirección simple | Exponential Backoff |
+| **Caso de uso** | Carga de trabajo | Eventos/Notificaciones | Trazabilidad | Fallos transitorios (APIs/DB) |
 
 ---
 
 ## 🎯 Aprendizajes Clave
 
 ### Ejercicio 1 (Point-to-Point)
-- ✅ Load balancing automático con round-robin
-- ✅ Acknowledgement manual para procesamiento confiable  
-- ✅ Prefetch count controla la distribución
-- ✅ Queues duraderas para persistencia
+- ✅ Load balancing automático con round-robin.
+- ✅ Acknowledgement manual para procesamiento confiable.
 
 ### Ejercicio 2 (Pub-Sub Fan-out)
-- ✅ Broadcast automático a todos los subscribers
-- ✅ Desacoplamiento completo entre componentes
-- ✅ Exchange fanout ignora routing keys
-- ✅ Colas anónimas para suscripciones temporales
+- ✅ Broadcast automático a todos los subscribers.
+- ✅ Exchange fanout ignora routing keys.
 
 ### Ejercicio 3 (DLQ)
-- ✅ Mensajes con error no se pierden
-- ✅ Redirección automática con DLX
-- ✅ Reprocesamiento/control mediante DLQ consumer
-- ✅ Patrón estándar usado en industria (RabbitMQ/SQS+DLQ)
+- ✅ Mensajes con error no se pierden.
+- ✅ Redirección automática mediante configuración de exchange.
+
+### Ejercicio 4 (Retry Exponential Backoff)
+- ✅ Implementación de resiliencia sin plugins externos.
+- ✅ Control de carga mediante esperas progresivas.
+- ✅ Uso creativo de TTL y DLX para simular "delay".
 
 ---
 
 ## 🔍 Observaciones en RabbitMQ UI
 
-### Para Ejercicio 1
-- Ver la queue `tp3.ej1.tasks` con mensajes en ready/unacked
-- Observar cómo los mensajes se distribuyen entre consumers
-- Ver el prefetch count funcionando
-
-### Para Ejercicio 2  
-- Ver el exchange fanout `tp3.ej2.blocks.fanout`
-- Observar las 3 colas anónimas conectadas
-- Verificar que todos los mensajes llegan a todas las colas
-
-### Para Ejercicio 3
-- Ver la cola principal `tp3.ej3.main.queue`
-- Ver el DLX `tp3.ej3.dlx.exchange`
-- Ver la DLQ `tp3.ej3.dlq.queue`
-- Verificar que mensajes con `"error": true` terminan en la DLQ
-
----
-
-## 📝 Configuración de Properties
-
-### Producer (application.properties)
-```properties
-# Ejercicio 1
-spring.rabbitmq.addresses=localhost:5672
-
-# Ejercicio 2  
-publisher.delay-ms=1500
-```
-
-### Consumer (application.properties)
-```properties
-# Identificación para ambos ejercicios
-consumer.id=1
-node.id=1
-
-# Configuración RabbitMQ
-spring.rabbitmq.addresses=localhost:5672
-spring.rabbitmq.listener.simple.acknowledge-mode=manual
-spring.rabbitmq.listener.simple.prefetch=1
-```
+### Para Ejercicio 4
+- Ver el exchange `tp3.ej4.retry.exchange`.
+- Observar las colas `tp3.ej4.retry.1s`, `2s`, `4s`, `8s`.
+- Verificar cómo los mensajes "saltan" de las colas de retry de regreso a la principal al expirar su TTL.
+- Ver los mensajes finales en `tp3.ej4.dlq.queue` tras agotar los reintentos.
