@@ -1,0 +1,13 @@
+{
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "never"
+    },
+    "java.completion.filteredTypes": [
+        "java.util.Queue",
+        "java.nio.channels.Channel",
+        "javax.naming.Binding",
+        "jdk.internal.foreign.abi.Binding",
+        "jdk.internal.org.jline.reader.Binding",
+        "sun.rmi.transport.Channel"
+    ]
+}
