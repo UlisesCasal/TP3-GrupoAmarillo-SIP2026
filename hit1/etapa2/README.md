@@ -16,7 +16,7 @@
 
 ```mermaid
 graph TD
-    Endpoint[" :8080/image/sobel"]
+    Endpoint["POST :8080/image/sobel"]
     Queue_workers["Queue Workers"]
     Queue_results["Queue Results"]
     Worker1["Worker Sobel"]
@@ -30,6 +30,7 @@ graph TD
     Worker2 --> Queue_results
     Worker3 --> Queue_results
     Queue_results --> Joiner["Joiner"]
+    Joiner --> Endpoint_result["GET :8080/images/sobel/result_{ID}.jpg"]
 ```
 ## Ejecución
 Este programa acepta solo imagenes JPG.
