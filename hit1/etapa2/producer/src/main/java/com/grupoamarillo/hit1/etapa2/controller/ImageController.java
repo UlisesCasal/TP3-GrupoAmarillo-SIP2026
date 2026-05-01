@@ -28,7 +28,7 @@ public class ImageController {
     private RabbitTemplate rabbitTemplate;
 
     @PostMapping("/sobel")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, @RequestParam("parts") int parts) throws Exception {
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, @RequestParam(name="parts", defaultValue="10") int parts) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         BufferedImage original = ImageIO.read(file.getInputStream());
         String jobId = UUID.randomUUID().toString();
@@ -43,6 +43,10 @@ public class ImageController {
             ImageIO.write(sub, "jpg", baos);
             
             ImagePartMessage msg = new ImagePartMessage(jobId, i, parts, baos.toByteArray(), original.getWidth());
+            if (msg.getImageData().length == 0){
+                System.err.println("No se pudo generar la división de la imagen");
+                return ResponseEntity.badRequest().body("No se pudo procesar la imagen");
+            }
             String menssage = objectMapper.writeValueAsString(msg);
             rabbitTemplate.convertAndSend("image_exchange", "to_worker", menssage);
         }

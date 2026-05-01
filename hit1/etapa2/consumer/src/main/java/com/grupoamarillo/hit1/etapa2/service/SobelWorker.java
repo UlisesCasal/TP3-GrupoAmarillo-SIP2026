@@ -40,6 +40,8 @@ public class SobelWorker {
         ObjectMapper mapper = new ObjectMapper();
         
         ImagePartMessage image =  mapper.readValue(msg.getBody(), ImagePartMessage.class);
+        try{
+        
         BufferedImage img = ImageIO.read(new ByteArrayInputStream(image.getImageData()));
         System.out.println("Procesando tile: " + (image.getSequenceNumber() + 1) + " / " + image.getTotalParts() );
         BufferedImage result = applySobel(img);
@@ -52,6 +54,10 @@ public class SobelWorker {
 
         rabbitTemplate.convertAndSend("image_exchange", "to_aggregator", partImage);
         channel.basicAck(tag, false);
+        } catch (Exception e){
+            System.err.println("Error en proceso de imagen Sobel");
+            channel.basicNack(tag, true, false);
+        }
     }
 
     private BufferedImage applySobel(BufferedImage image) {
