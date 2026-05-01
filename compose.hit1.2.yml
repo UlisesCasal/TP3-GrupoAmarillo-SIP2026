@@ -1,8 +1,8 @@
 name: hit1-etapa2
 services:
   consumer:
-    build: ./hit1/etapa2/consumer
-          #image: consumer-hit1-2
+    #build: ./hit1/etapa2/consumer
+    image: tp3-consumer-hit1-et2
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -11,8 +11,8 @@ services:
     scale: 4
 
   producer:
-    build: ./hit1/etapa2/producer
-    #image: producer-hit1-2
+    #build: ./hit1/etapa2/producer
+    image: tp3-producer-hit1-et2
     ports:
       - 8080:8080
     env_file:
