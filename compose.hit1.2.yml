@@ -1,0 +1,40 @@
+name: hit1-etapa2
+services:
+  consumer:
+    build: ./hit1/etapa2/consumer
+          #image: consumer-hit1-2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - .env
+    scale: 4
+
+  producer:
+    build: ./hit1/etapa2/producer
+    #image: producer-hit1-2
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    env_file:
+      .env
+    environment:
+      RABBITMQ_DEFAULT_PASS: $RMQ_Pass
+      RABBITMQ_DEFAULT_USER: $RMQ_User
+    healthcheck:
+      # Recommended command to check RabbitMQ node readiness
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
