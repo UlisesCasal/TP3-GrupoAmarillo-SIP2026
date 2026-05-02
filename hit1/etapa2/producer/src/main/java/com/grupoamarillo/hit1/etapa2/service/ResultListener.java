@@ -13,6 +13,7 @@ import java.util.Map;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,9 +41,30 @@ public class ResultListener {
         cache.computeIfAbsent(msg.getJobId(), k -> Collections.synchronizedList(new ArrayList<>())).add(msg);
         
         List<ImagePartMessage> parts = cache.get(msg.getJobId());
-        if (parts.size() == msg.getTotalParts()) {
-            reconstructImage(parts, msg.getJobId());
+        String jobId = msg.getJobId();
+        
+        // 2. IDEMPOTENCIA (Tolerancia a fallos)
+        // Verificamos si ya tenemos este número de secuencia para evitar duplicados 
+        // en caso de que un worker haya re-procesado por falta de ACK.
+        boolean isDuplicate = parts.stream()
+                .anyMatch(p -> p.getSequenceNumber() == msg.getSequenceNumber());
+
+        if (!isDuplicate) {
+            parts.add(msg);
         }
+
+        // 3. Verificación de completitud
+        if (parts.size() == msg.getTotalParts()) {
+            try {
+                reconstructImage(parts, msg.getJobId());
+            } catch (IOException e) {
+                System.err.println("Error al reconstruir JPG para el Job " + jobId + ": " + e.getMessage());
+            } finally {
+                // 4. LIMPIEZA: Evita fugas de memoria (Memory Leaks)
+                cache.remove(jobId);
+            }
+        }
+        
         channel.basicAck(tag,false);
     }
 
