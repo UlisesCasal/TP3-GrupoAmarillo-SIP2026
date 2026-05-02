@@ -28,7 +28,7 @@ public class ImageController {
     private RabbitTemplate rabbitTemplate;
 
     @PostMapping("/sobel")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, @RequestParam(name="parts", defaultValue="10") int parts) throws Exception {
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file, @RequestParam(name="parts", defaultValue="4") int parts) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         BufferedImage original = ImageIO.read(file.getInputStream());
         String jobId = UUID.randomUUID().toString();
@@ -50,6 +50,6 @@ public class ImageController {
             String menssage = objectMapper.writeValueAsString(msg);
             rabbitTemplate.convertAndSend("image_exchange", "to_worker", menssage);
         }
-        return ResponseEntity.ok("Procesando Job: " + jobId + "Aceede a la imagen final en: http://localhost:8080/image/sobel/result_"+ jobId +".jpg ");
+        return ResponseEntity.ok("Procesando Job: " + jobId + " Mira la imagen final en: http://localhost:8080/image/sobel/result_"+ jobId +".jpg ");
     }
 }
