@@ -5,9 +5,8 @@ RUN ./mvnw -DskipTests clean package
 
 FROM eclipse-temurin:17-jre
 
-RUN groupadd -r producergroup && useradd -r -g producergroup produceruser
-RUN mkdir -p /app/result && chown produceruser:producergroup /app/result
 WORKDIR /app
+RUN groupadd -r producergroup && useradd -r -g producergroup produceruser
 USER produceruser
 
 COPY --chown=produceruser:producergroup --from=build /app/target/*.jar producer-sobel.jar

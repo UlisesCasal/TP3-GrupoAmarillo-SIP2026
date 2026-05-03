@@ -54,6 +54,6 @@ public class ImageController {
         
         
         imgProd.processAndSend(file, parts, jobId);
-        return ResponseEntity.ok("Procesando Job: " + jobId + " Mira la imagen final en: http://localhost:8080/image/sobel/result_"+ jobId +"."+ formatImage +" ");
+        return ResponseEntity.ok("Procesando Job: " + jobId + " Mira la imagen final en: http://localhost:8088/image/sobel/result_"+ jobId +"."+ formatImage +" ");
     }
 }
