@@ -12,7 +12,7 @@ sh ./build-image.sh
 
 Una vez generada la imagen, levantamos el contenedor.
 ~~~bash
-docker run -p 8080:8080 hit1:etapa1 
+docker run -p 8080:8080 tp3-hit1-etapa1 
 ~~~
 
 Podemos enviar la imagen a procesar utilizando curl:
