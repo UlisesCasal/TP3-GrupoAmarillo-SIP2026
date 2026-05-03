@@ -1,4 +1,4 @@
-Hit #1 — El operador de Sobel (“un equipo”)
+# Hit #1 — El operador de Sobel (“un equipo”)
 El operador de Sobel [SOB68] es una máscara que, aplicada a una imagen, permite detectar (resaltar) bordes. Es una operación matemática que, aplicada a cada píxel y considerando los píxeles vecinos, obtiene un nuevo valor (color) para ese píxel. Aplicando la operación a cada píxel se obtiene una nueva imagen que resalta los bordes.
 
 Objetivo:
@@ -7,17 +7,14 @@ Objetivo:
 - Proceso: aplicación del operador de Sobel.
 - Output: una imagen filtrada (con los bordes resaltados).
 
-- [X] Etapa 1 — Centralizado. Desarrollen un proceso centralizado que tome una imagen, aplique la máscara y genere un nuevo archivo con el resultado. Ámbito: una sola laptop / equipo.
+## Etapas 
+### 1 — Centralizado. 
+Desarrollen un proceso centralizado que tome una imagen, aplique la máscara y genere un nuevo archivo con el resultado. Ámbito: una sola laptop / equipo.
 
->[!NOTE]
-> Se deja a disposicion una web simple para cargar la imagen y observar el resultado.
-> 
-> [GUI image](http://localhost:8080)
 
-- [X] Etapa 2 — Distribuido. Desarrollen el mismo proceso de manera distribuida: dividan la imagen en N pedazos y asignen la tarea de aplicar la máscara a N procesos distribuidos (workers). Después unifiquen los resultados. Este es exactamente el patrón Master-Worker (también llamado Granja de Trabajadores) que Foster [FOS95] caracteriza como uno de los esquemas algorítmicos paralelos fundamentales. Ámbito: Docker.
-  - Analizar como definir mejor la división de la imagen, para no explotar la cola de mensajes ni generar tiles muy pequeños.
- 
+### 2 — Distribuido. 
+Desarrollen el mismo proceso de manera distribuida: dividan la imagen en N pedazos y asignen la tarea de aplicar la máscara a N procesos distribuidos (workers). Después unifiquen los resultados. Este es exactamente el patrón Master-Worker (también llamado Granja de Trabajadores) que Foster [FOS95] caracteriza como uno de los esquemas algorítmicos paralelos fundamentales. Ámbito: Docker.
   
-- [ ] Etapa 3 — Tolerante a fallos. Mejoren la aplicación de la Etapa 2 para que, en caso de que un worker (proceso distribuido al que se le asignó parte de la imagen a procesar) se caiga y no responda, el proceso principal detecte la situación y reasigne el cálculo a otro worker.
-
-![](https://dpetrocelli.github.io/sd2026/assets/images/tp3_hit1.png)
+  
+### 3 — Tolerante a fallos. 
+Mejoren la aplicación de la Etapa 2 para que, en caso de que un worker (proceso distribuido al que se le asignó parte de la imagen a procesar) se caiga y no responda, el proceso principal detecte la situación y reasigne el cálculo a otro worker.
