@@ -66,7 +66,7 @@ public class ImageController {
             log.error("Parts value incorrect. Parts value: {} - Image height: {}", parts, original.getHeight());
             System.err.println("Parts value incorrect.");
             return ResponseEntity.badRequest().body("Parts value incorrect");}
-        String formatImage = contentType.substring(contentType.length() -3);
+        String formatImage = contentType.substring(contentType.indexOf("/")+1);
         
         
         imgProd.processAndSend(file, parts, jobId);

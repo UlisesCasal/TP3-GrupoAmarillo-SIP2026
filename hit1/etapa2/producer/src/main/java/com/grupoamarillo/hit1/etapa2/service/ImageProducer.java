@@ -38,8 +38,8 @@ public class ImageProducer {
             log.warn("Assign chunkHeight to 1, minimus kernel");
             chunkHeight = 1;
         }
-
-        String format = file.getContentType().contains("png") ? "png" : "jpg";
+        String contentType =file.getContentType(); 
+        String format = contentType.substring(contentType.indexOf("/")+1);
         ObjectMapper objectMapper = new ObjectMapper();
 
         for (int i = 0; i < numChunks; i++) {
