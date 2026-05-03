@@ -1,0 +1,6 @@
+.git*
+Help.md
+mvnw.cmd
+target/
+README.md
+build-image.sh

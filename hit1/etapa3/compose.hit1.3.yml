@@ -1,0 +1,54 @@
+name: hit1-etapa3
+services:
+  consumer:
+    #build: ./consumer
+    image: tp3-consumer-hit1-et3
+    environment:
+       CONSUMER_DELAY: 2000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - .env
+    scale: 4
+
+
+  producer:
+    #build: ./producer
+    image: tp3-producer-hit1-et3
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  joiner:
+    #build: ./joiner
+    image: tp3-joiner-hit1-et3
+    ports:
+      - 8088:8080
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    env_file:
+      .env
+    environment:
+      RABBITMQ_DEFAULT_PASS: $RMQ_Pass
+      RABBITMQ_DEFAULT_USER: $RMQ_User
+    healthcheck:
+      # Recommended command to check RabbitMQ node readiness
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

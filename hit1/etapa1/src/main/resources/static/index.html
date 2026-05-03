@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sobel Upload</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        img { max-width: 400px; display: block; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<h2>Subir imagen</h2>
+
+<input type="file" id="fileInput" accept="image/*">
+<button onclick="upload()">Procesar</button>
+
+<h3>Resultado</h3>
+<img id="result" />
+
+<script>
+async function upload() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files.length) return;
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    const response = await fetch('/image/sobel', {
+        method: 'POST',
+        body: formData
+    });
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+
+    document.getElementById('result').src = url;
+}
+</script>
+
+</body>
+</html>
