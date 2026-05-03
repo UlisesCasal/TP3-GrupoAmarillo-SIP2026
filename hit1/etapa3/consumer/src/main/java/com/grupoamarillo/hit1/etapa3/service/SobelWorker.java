@@ -9,6 +9,7 @@ import org.springframework.amqp.core.Message;
 
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -32,7 +33,9 @@ public class SobelWorker {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
-    
+    @Value("${consumer.delay:2000}")
+    private long delayMs;
+
     private static final Logger log = LoggerFactory.getLogger(SobelWorker.class);
 
 
@@ -69,7 +72,7 @@ public class SobelWorker {
             result.setFormat(chunk.getFormat());
 
             log.debug("PROCESANDO");
-            Thread.sleep(2000); 
+            Thread.sleep(delayMs); 
             
             // 5. Enviar a la cola de resultados
             String message = mapper.writeValueAsString(result);

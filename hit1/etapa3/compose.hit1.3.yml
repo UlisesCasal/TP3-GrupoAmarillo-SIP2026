@@ -3,12 +3,15 @@ services:
   consumer:
     #build: ./consumer
     image: tp3-consumer-hit1-et3
+    environment:
+       CONSUMER_DELAY: 2000
     depends_on:
       rabbitmq:
         condition: service_healthy
     env_file:
       - .env
     scale: 4
+
 
   producer:
     #build: ./producer
@@ -34,7 +37,6 @@ services:
 
 
   rabbitmq:
-    container_name: rabbitmq
     image: rabbitmq:3-management
     ports:
       - 5672:5672
