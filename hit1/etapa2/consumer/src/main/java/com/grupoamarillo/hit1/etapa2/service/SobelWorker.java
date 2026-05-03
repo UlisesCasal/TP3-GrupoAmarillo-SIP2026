@@ -1,87 +1,120 @@
 package com.grupoamarillo.hit1.etapa2.service;
 
-
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.core.Message;
+
 import com.rabbitmq.client.Channel;
 
+import org.springframework.amqp.core.Message;
 
+import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-
 import javax.imageio.ImageIO;
-import java.awt.Color;
+
+import java.io.IOException;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grupoamarillo.hit1.etapa2.dto.ImagePartMessage;
 
 
+import com.grupoamarillo.hit1.etapa2.dto.ImageChunk;
+import com.grupoamarillo.hit1.etapa2.dto.ResultChunk;
 
-@Service
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+@Component
 public class SobelWorker {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    
+    private static final Logger log = LoggerFactory.getLogger(SobelWorker.class);
 
 
-
-    @RabbitListener(queues = "sobel.work_queue",containerFactory = "manualAckFactory")
-    public void process(Message msg, Channel channel) throws Exception {
+    @RabbitListener(queues = "sobel.work_queue", containerFactory = "manualAckFactory")
+    public void processChunk(Message msg, Channel channel) throws IOException {
         long tag = msg.getMessageProperties().getDeliveryTag();
-
         ObjectMapper mapper = new ObjectMapper();
+        ImageChunk chunk = mapper.readValue(msg.getBody(),ImageChunk.class);
+        log.info("Apply Sobel to jobID {} chunk {}/{}",chunk.getJobId(), chunk.getChunkId(),chunk.getTotalChunks());
         
-        ImagePartMessage image =  mapper.readValue(msg.getBody(), ImagePartMessage.class);
         try{
-        
-        BufferedImage img = ImageIO.read(new ByteArrayInputStream(image.getImageData()));
-        System.out.println("Procesando tile: " + (image.getSequenceNumber() + 1) + " / " + image.getTotalParts() );
-        BufferedImage result = applySobel(img);
+            // 1. Decodificar la imagen recibida
+            ByteArrayInputStream bais = new ByteArrayInputStream(chunk.getData());
+            BufferedImage image = ImageIO.read(bais);
+            
+            // 2. Aplicar el filtro Sobel
+            BufferedImage resultImage = applySobel(image);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(result, "jpg", baos);
-        image.setImageData(baos.toByteArray());
-        String partImage = mapper.writeValueAsString(image);
-        System.out.println("Sobel de parte aplicado");
+            // Eliminar Halo
+            int width = resultImage.getWidth();
+            int realHeight = resultImage.getHeight() - chunk.getHaloTop() - chunk.getHaloBottom();
+           
+            BufferedImage finalChunk = resultImage.getSubimage(0, chunk.getHaloTop(), width, realHeight);
+            // 3. Convertir resultado a bytes
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(finalChunk, chunk.getFormat(), baos);
+            
+            // 4. Crear el DTO de salida preservando los metadatos de rastreo
+            ResultChunk result = new ResultChunk();
+            result.setJobId(chunk.getJobId()); // Crucial para el Joiner
+            result.setData(baos.toByteArray());
+            result.setChunkId(chunk.getChunkId());
+            result.setTotalChunks(chunk.getTotalChunks());
+            result.setFormat(chunk.getFormat());
 
-        rabbitTemplate.convertAndSend("image_exchange", "to_aggregator", partImage);
-        channel.basicAck(tag, false);
-        } catch (Exception e){
+            // 5. Enviar a la cola de resultados
+            String message = mapper.writeValueAsString(result);
+            rabbitTemplate.convertAndSend("image_exchange", "to_aggregator", message);
+            log.info("Correct apply Sobel to jobID {} chunk {}/{}",chunk.getJobId(), chunk.getChunkId(),chunk.getTotalChunks());
+            channel.basicAck(tag, false);
+         } catch (Exception e){
             System.err.println("Error en proceso de imagen Sobel");
+            log.info("Error to apply Sobel to jobID {} chunk {}/{} \n Error {}",chunk.getJobId(), chunk.getChunkId(),chunk.getTotalChunks(),e);
             channel.basicNack(tag, true, false);
         }
     }
 
-    private BufferedImage applySobel(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        BufferedImage out = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+    private BufferedImage applySobel(BufferedImage src) {
+        int width = src.getWidth();
+        int height = src.getHeight();
+        BufferedImage dest = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        int[][] gx = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
-        int[][] gy = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
+        for (int x = 1; x < width - 1; x++) {
+            for (int y = 1; y < height - 1; y++) {
+                int p00 = getGray(src.getRGB(x - 1, y - 1));
+                int p01 = getGray(src.getRGB(x, y - 1));
+                int p02 = getGray(src.getRGB(x + 1, y - 1));
+                int p10 = getGray(src.getRGB(x - 1, y));
+                int p12 = getGray(src.getRGB(x + 1, y));
+                int p20 = getGray(src.getRGB(x - 1, y + 1));
+                int p21 = getGray(src.getRGB(x, y + 1));
+                int p22 = getGray(src.getRGB(x + 1, y + 1));
 
-        for (int y = 1; y < height - 1; y++) {
-            for (int x = 1; x < width - 1; x++) {
-                int px = 0, py = 0;
-                for (int i = -1; i <= 1; i++) {
-                    for (int j = -1; j <= 1; j++) {
-                        int gray = new Color(image.getRGB(x + j, y + i)).getRed();
-                        px += gx[i + 1][j + 1] * gray;
-                        py += gy[i + 1][j + 1] * gray;
-                    }
-                }
-                int g = (int) Math.min(255, Math.sqrt(px * px + py * py));
-                out.setRGB(x, y, new Color(g, g, g).getRGB());
+                int gx = (p02 + 2 * p12 + p22) - (p00 + 2 * p10 + p20);
+                int gy = (p00 + 2 * p01 + p02) - (p20 + 2 * p21 + p22);
+                
+                int magnitude = (int) Math.sqrt(gx * gx + gy * gy);
+                magnitude = Math.min(255, magnitude);
+                
+                int rgb = (magnitude << 16) | (magnitude << 8) | magnitude;
+                dest.setRGB(x, y, rgb);
             }
         }
-        return out;
+        return dest;
+    }
+
+    private int getGray(int rgb) {
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+        return (int) (0.299 * r + 0.587 * g + 0.114 * b);
     }
 }
