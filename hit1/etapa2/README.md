@@ -3,16 +3,6 @@
 ## Etapa 2 — Distribuido.
  Desarrollen el mismo proceso de manera distribuida: dividan la imagen en N pedazos y asignen la tarea de aplicar la máscara a N procesos distribuidos (workers). Después unifiquen los resultados. Este es exactamente el patrón Master-Worker (también llamado Granja de Trabajadores) que Foster [FOS95] caracteriza como uno de los esquemas algorítmicos paralelos fundamentales. Ámbito: Docker.
 
-## 
-- [X] EP para recibir la imagen a procesar
-- [X] Crear producer
-    - [X] Dividir la imagen
-- [X] Crear worker
-  - [X] Escalar a gris
-  - [X] Aplicar el filtro de Sobel a su parte asignada
-- [X] Crear joiner
-- [X] Crer EP para ver la imagen generada
-- [ ] Dockerizar todo el sistema
 
 ```mermaid
 graph TD
@@ -30,24 +20,32 @@ graph TD
     Worker2 --> Queue_results
     Worker3 --> Queue_results
     Queue_results --> Joiner["Joiner"]
-    Joiner --> Endpoint_result["GET :8080/images/sobel/result_{ID}.jpg"]
+    Joiner --> Endpoint_result["GET :8088/images/sobel/result_{ID}.jpg"]
 ```
+
 ## Ejecución
-Este programa acepta solo imagenes JPG.
+> [!NOTE] 
+> Estan definidos los valores por defecto en el archivo .env. 
+> Si no se encuentran utilizara los mismo.
+ 
+> [!CAUTION]
+> Como host default de rabbitmq se definio `localhost`, recuerde reemplarlo por la IP correcta en el `.env`.
 ~~~bash
-# Estan definidos los valores por defecto en el archivo .env, pero se pueden modificar si es necesario. 
-# Si no se enecuentran utilizara los mismo.
-# ATENCION QUE SE DEFINIO localhost para rabbitmq, si se ejecuta en docker es necesario cambiarlo por la ip del host o el nombre del servicio definido en el compose.
 cp .env.example .env
 ~~~
 
-Se proporciona un compose para ejecutar con 4 consumidores, es necesario hacer un build para generar las imagenes de los contenedores.
 ~~~bash
-docker-compose -f compose.hi1.2.yml up --build
+# Se proporciona un script para generar las imagenes de esta etapa
+sh ./build-image.sh
+~~~
+
+Se definio un compose con un producer, 4 workers y un joiner
+~~~bash
+docker-compose -f compose.hit1.2.yml up
 ~~~
 
 ~~~bash
 # parts cantidad de partes en las que se divide la imagen, mensajes que generará el producer
 curl -X POST -F "file=@/path/to/image.jpg" -F "parts=10" http://localhost:8080/image/sobel
 ~~~
-La imagen se puede ver en `http://localhost:8080/images/sobel/result_{ID}.jpg`, donde `{ID}` es un identificador único generado para cada imagen procesada.
+La imagen se puede ver en `http://localhost:8088/images/sobel/result_{ID}.jpg`, donde `{ID}` es un identificador único generado para cada imagen procesada.

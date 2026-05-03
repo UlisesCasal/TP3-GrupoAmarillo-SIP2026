@@ -1,7 +1,7 @@
 name: hit1-etapa2
 services:
   consumer:
-    #build: ./hit1/etapa2/consumer
+    #build: ./consumer
     image: tp3-consumer-hit1-et2
     depends_on:
       rabbitmq:
@@ -11,7 +11,7 @@ services:
     scale: 4
 
   producer:
-    #build: ./hit1/etapa2/producer
+    #build: ./producer
     image: tp3-producer-hit1-et2
     ports:
       - 8080:8080
@@ -22,7 +22,7 @@ services:
         condition: service_healthy
 
   joiner:
-    #build: ./hit1/etapa2/joiner
+    #build: ./joiner
     image: tp3-joiner-hit1-et2
     ports:
       - 8088:8080
