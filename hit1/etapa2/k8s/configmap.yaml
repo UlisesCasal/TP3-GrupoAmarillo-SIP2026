@@ -1,0 +1,10 @@
+apiVersion: v1                                            
+kind: ConfigMap 
+
+metadata:                                                 
+  name: sobel-config
+data:
+  RMQ_HOST: "rabbitmq"
+  RMQ_PORT: "5672"
+  RMQ_User: "guest"
+  RMQ_Pass: "guest"

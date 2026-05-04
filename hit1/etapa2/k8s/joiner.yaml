@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joiner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: joiner
+  template:
+    metadata:
+      labels:
+        app: joiner
+    spec:
+      containers:
+        - name: joiner
+          image: tp3-joiner-hit1-et2:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: sobel-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: joiner
+spec:
+  type: NodePort
+  selector:
+    app: joiner
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30088

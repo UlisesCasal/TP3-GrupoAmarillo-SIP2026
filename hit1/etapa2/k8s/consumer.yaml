@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: consumer
+  template:
+    metadata:
+      labels:
+        app: consumer
+    spec:
+      containers:
+        - name: consumer
+          image: tp3-consumer-hit1-et2:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: sobel-config

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: producer
+  template:
+    metadata:
+      labels:
+        app: producer
+    spec:
+      containers:
+        - name: producer
+          image: tp3-producer-hit1-et2:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: sobel-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: producer
+spec:
+  type: NodePort
+  selector:
+    app: producer
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
