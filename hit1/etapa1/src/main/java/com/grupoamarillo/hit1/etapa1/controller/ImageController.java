@@ -1,6 +1,7 @@
 package com.grupoamarillo.hit1.etapa1.controller;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,10 +10,16 @@ import com.grupoamarillo.hit1.etapa1.services.SobelFilter;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/image")
 public class ImageController {
+
+    @GetMapping("/health")
+    public Map<String, String> health() {
+        return Map.of("servicio", "ok");
+    }
 
     @PostMapping(value = "/sobel", produces = MediaType.IMAGE_PNG_VALUE)
     public byte[] sobel(@RequestParam("file") MultipartFile file) throws Exception {

@@ -15,7 +15,7 @@ sh build-image.sh
 ~~~
 Levantamos los contenedores
 ~~~ bash
-docker compose -f compose.hi1.3.yml up -d
+docker compose -f compose.hit1.3.yml up -d
 ~~~
 Se levantaron 4 workers, un rabbitmq, un joinner (para compaginar y poner a dispocision la imagen) y un producer (que divide y encola la imagen original).
 
@@ -24,7 +24,7 @@ Realizamos una petición POST al endpoint `/image/sobel` para procesar una image
 # parts cantidad de partes en las que se divide la imagen, mensajes que generará el producer
 curl -X POST -F "file=@/path/to/image.jpg" -F "parts=10" http://localhost:8080/image/sobel
 ~~~
-La imagen se puede ver en `http://localhost:8088/images/sobel/result_{ID}.jpg`, donde `{ID}` es un identificador único generado para cada imagen procesada.
+La imagen se puede ver en `http://localhost:8088/image/sobel/result_{ID}.jpg`, donde `{ID}` es un identificador único generado para cada imagen procesada.
 
 
 ### Arquitectura

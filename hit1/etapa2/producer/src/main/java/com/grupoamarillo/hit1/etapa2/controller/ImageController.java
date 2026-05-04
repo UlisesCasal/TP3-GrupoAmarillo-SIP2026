@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,10 +24,16 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/image")
 public class ImageController {
+
+    @GetMapping("/health")
+    public Map<String, String> health() {
+        return Map.of("servicio", "ok");
+    }
 
     private final ImageProducer imgProd;
     private static final List<String> ALLOWED_MIMES = List.of("image/jpeg", "image/png");

@@ -36,7 +36,7 @@ cp .env.example .env
 
 ~~~bash
 # Se proporciona un script para generar las imagenes de esta etapa
-sh ./build-image.sh
+sh ./build-images.sh
 ~~~
 
 Se definio un compose con un producer, 4 workers y un joiner
@@ -48,4 +48,4 @@ docker-compose -f compose.hit1.2.yml up
 # parts cantidad de partes en las que se divide la imagen, mensajes que generará el producer
 curl -X POST -F "file=@/path/to/image.jpg" -F "parts=10" http://localhost:8080/image/sobel
 ~~~
-La imagen se puede ver en `http://localhost:8088/images/sobel/result_{ID}.jpg`, donde `{ID}` es un identificador único generado para cada imagen procesada.
+La imagen se puede ver en `http://localhost:8088/image/sobel/result_{ID}.jpg`, donde `{ID}` es un identificador único generado para cada imagen procesada.

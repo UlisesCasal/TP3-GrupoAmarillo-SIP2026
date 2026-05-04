@@ -86,10 +86,11 @@ public class SobelWorker {
             
             if (deliveryCount <= 4){
                 log.info("Retry {}", deliveryCount);
-                channel.basicNack(tag, false,true);
+                channel.basicNack(tag, false, true);
+            } else {
+                log.error("Not possible to apply Sobel, sending to DLQ");
+                channel.basicNack(tag, false, false);
             }
-            log.error("Not posibble apply Sobel");
-            channel.basicNack(tag, true, false);
         }
     }
 
